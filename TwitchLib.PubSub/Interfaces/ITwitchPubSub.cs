@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using TwitchLib.PubSub.Events;
 
 namespace TwitchLib.PubSub.Interfaces
@@ -9,13 +10,27 @@ namespace TwitchLib.PubSub.Interfaces
     public interface ITwitchPubSub
     {
         /// <summary>
+        /// Fires when a moderation event hits a user
+        /// </summary>
+        event EventHandler<OnAutomodCaughtUserMessage> OnAutomodCaughtUserMessage;
+
+        /// <summary>
+        /// Fires when Automod updates a held message.
+        /// </summary>
+        event EventHandler<OnAutomodCaughtMessageArgs> OnAutomodCaughtMessage;
+        
+        /// <summary>
         /// Occurs when [on ban].
         /// </summary>
         event EventHandler<OnBanArgs> OnBan;
         /// <summary>
-        /// Occurs when [on bits received].
+        /// Fires when PubSub receives a bits message.
         /// </summary>
-        event EventHandler<OnBitsReceivedArgs> OnBitsReceived;
+        event EventHandler<OnBitsReceivedV2Args> OnBitsReceivedV2;
+        /// <summary>
+        /// Fires when PubSub receives notice when the channel unlocks bit badge.
+        /// </summary>
+        event EventHandler<OnChannelBitsBadgeUnlockArgs> OnChannelBitsBadgeUnlock;
         /// <summary>
         /// Occurs when [on channel extension broadcast].
         /// </summary>
@@ -53,6 +68,10 @@ namespace TwitchLib.PubSub.Interfaces
         /// </summary>
         event EventHandler<OnListenResponseArgs> OnListenResponse;
         /// <summary>
+        /// Fires when PubSub receives notice when the channel detects low trust user.
+        /// </summary>
+        event EventHandler<OnLowTrustUsersArgs> OnLowTrustUsers;
+        /// <summary>
         /// Occurs when [on pub sub service closed].
         /// </summary>
         event EventHandler OnPubSubServiceClosed;
@@ -72,6 +91,10 @@ namespace TwitchLib.PubSub.Interfaces
         /// Occurs when [on R9K beta off].
         /// </summary>
         event EventHandler<OnR9kBetaOffArgs> OnR9kBetaOff;
+        /// <summary>
+        /// Fires when PubSub receives notice when a channel cancels the raid
+        /// </summary>
+        event EventHandler<OnRaidCancelArgs> OnRaidCancel; 
         /// <summary>
         /// Occurs when [on stream down].
         /// </summary>
@@ -169,16 +192,27 @@ namespace TwitchLib.PubSub.Interfaces
         /// Connects this instance.
         /// </summary>
         void Connect();
+        
+        /// <summary>
+        /// Connects this instance.
+        /// </summary>
+        Task ConnectAsync();
+        
         /// <summary>
         /// Disconnects this instance.
         /// </summary>
         void Disconnect();
+
+        /// <summary>
+        /// Disconnects this instance.
+        /// </summary>
+        Task DisconnectAsync();
+        
         /// <summary>
         /// Listens to bits events.
         /// </summary>
         /// <param name="channelTwitchId">The channel twitch identifier.</param>
-        [Obsolete("This topic is deprecated by Twitch. Please use ListenToBitsEventsV2()", false)]
-        void ListenToBitsEvents(string channelTwitchId);
+        void ListenToBitsEventsV2(string channelTwitchId);
         /// <summary>
         /// Listens to extension channel broadcast messages.
         /// </summary>
@@ -238,11 +272,43 @@ namespace TwitchLib.PubSub.Interfaces
         /// <param name="channelTwitchId">The channel twitch identifier.</param>
         void ListenToPredictions(string channelTwitchId);
         /// <summary>
+        /// A user’s message held by AutoMod has been approved or denied.
+        /// </summary>
+        /// <param name="myTwitchId">Current user identifier.</param>
+        /// <param name="channelTwitchId">The channel twitch identifier.</param>
+        void ListenToUserModerationNotifications(string myTwitchId, string channelTwitchId);
+        /// <summary>
+        /// Sends a request to listen to Automod queued messages in a specific channel
+        /// </summary>
+        /// <param name="userTwitchId">A moderator's twitch account's ID</param>
+        /// <param name="channelTwitchId">Channel ID who has previous parameter's moderator</param>
+        void ListenToAutomodQueue(string userTwitchId, string channelTwitchId);
+        /// <summary>
+        /// Message sent when a user earns a new Bits badge in a particular channel, and chooses to share the notification with chat.
+        /// </summary>
+        /// <param name="channelTwitchId">The channel twitch identifier.</param>
+        void ListenToChannelBitsBadgeUnlocks(string channelTwitchId);
+        /// <summary>
+        /// The broadcaster or a moderator updates the low trust status of a user, or a new message has been sent in chat by a potential ban evader or a bans shared user.
+        /// </summary>
+        /// <param name="channelTwitchId">The channel twitch identifier.</param>
+        /// <param name="suspiciousUser">Suspicious user identifier.</param>
+        void ListenToLowTrustUsers(string channelTwitchId, string suspiciousUser);
+        
+        /// <summary>
         /// Sends the topics.
         /// </summary>
         /// <param name="oauth">The oauth.</param>
         /// <param name="unlisten">if set to <c>true</c> [unlisten].</param>
         void SendTopics(string oauth = null, bool unlisten = false);
+
+        /// <summary>
+        /// Sends the topics.
+        /// </summary>
+        /// <param name="oauth">The oauth.</param>
+        /// <param name="unlisten">if set to <c>true</c> [unlisten].</param>
+        Task SendTopicsAsync(string oauth = null, bool unlisten = false);
+        
         /// <summary>
         /// Tests the message parser.
         /// </summary>
